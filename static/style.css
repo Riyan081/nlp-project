@@ -1,0 +1,173 @@
+/* ResearchLens — Base Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+    color: #ffffff;
+}
+
+h2 {
+    font-size: 1.5rem;
+    margin: 1.5rem 0 1rem;
+    color: #c0c0ff;
+}
+
+.subtitle {
+    color: #888;
+    margin-bottom: 2rem;
+}
+
+/* Search Form */
+.search-form {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 0.85rem 1.2rem;
+    border: 1px solid #333;
+    border-radius: 8px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.search-form input:focus {
+    outline: none;
+    border-color: #6c63ff;
+}
+
+.search-form button, .btn-primary {
+    padding: 0.85rem 1.8rem;
+    background: #6c63ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-form button:hover, .btn-primary:hover {
+    background: #5a52d5;
+}
+
+.btn-secondary {
+    display: inline-block;
+    padding: 0.7rem 1.5rem;
+    background: #2a2a3e;
+    color: #c0c0ff;
+    border: 1px solid #444;
+    border-radius: 8px;
+    text-decoration: none;
+    margin-top: 1rem;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #3a3a50;
+}
+
+/* Sessions */
+.sessions {
+    margin-top: 2rem;
+}
+
+.session-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.2rem;
+    background: #1a1a2e;
+    border: 1px solid #2a2a3e;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+    color: #e0e0e0;
+    transition: border-color 0.2s;
+}
+
+.session-card:hover {
+    border-color: #6c63ff;
+}
+
+.session-meta {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+/* Papers */
+.paper-card {
+    background: #1a1a2e;
+    border: 1px solid #2a2a3e;
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.paper-card h3 {
+    color: #ffffff;
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+}
+
+.paper-meta {
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.paper-abstract {
+    font-size: 0.9rem;
+    color: #bbb;
+    margin-bottom: 0.5rem;
+}
+
+.paper-link {
+    color: #6c63ff;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.paper-link:hover {
+    text-decoration: underline;
+}
+
+.back-link {
+    color: #6c63ff;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+}

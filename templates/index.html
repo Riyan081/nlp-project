@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResearchLens — Research Discovery Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>ResearchLens</h1>
+        <p class="subtitle">NLP-Based Research Discovery & Analysis Platform</p>
+
+        <!-- Search Form -->
+        <form action="/search" method="POST" class="search-form">
+            <input type="text" name="topic" placeholder="Enter a research topic (e.g., Machine Learning for Electricity Demand Forecasting)" required>
+            <button type="submit">Discover Papers</button>
+        </form>
+
+        <!-- Past Sessions -->
+        {% if sessions %}
+        <div class="sessions">
+            <h2>Recent Searches</h2>
+            {% for session in sessions %}
+            <a href="/dashboard/{{ session.id }}" class="session-card">
+                <span class="session-topic">{{ session.topic }}</span>
+                <span class="session-meta">{{ session.num_papers }} papers · {{ session.created_at }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report — {{ session.topic }} — ResearchLens</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="/dashboard/{{ session.id }}" class="back-link">← Back to Dashboard</a>
+        <h1>Research Report: {{ session.topic }}</h1>
+        <p>Report will be fully generated in Step 7.</p>
+
+        <h2>Selected Papers ({{ papers|length }})</h2>
+        <ol>
+            {% for paper in papers %}
+            <li>{{ paper.title }} ({{ paper.year or 'N/A' }})</li>
+            {% endfor %}
+        </ol>
+    </div>
+</body>
+</html>

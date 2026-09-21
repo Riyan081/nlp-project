@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — {{ session.topic }} — ResearchLens</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Search</a>
+        <h1>{{ session.topic }}</h1>
+        <p>{{ papers|length }} papers found · Status: {{ session.status }}</p>
+
+        <!-- Papers List -->
+        <div class="papers-list">
+            <h2>Papers</h2>
+            {% for paper in papers %}
+            <div class="paper-card">
+                <h3>{{ paper.title }}</h3>
+                <p class="paper-meta">
+                    {{ paper.year or 'N/A' }} · Citations: {{ paper.citation_count or 0 }}
+                    · Relevance: {{ "%.2f"|format(paper.relevance_score) }}
+                </p>
+                <p class="paper-abstract">{{ paper.abstract[:300] }}{% if paper.abstract|length > 300 %}...{% endif %}</p>
+                {% if paper.url %}
+                <a href="{{ paper.url }}" target="_blank" class="paper-link">View Paper →</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Analysis button — will trigger NLP in later steps -->
+        <button id="analyze-btn" class="btn-primary" onclick="runAnalysis({{ session.id }})">
+            Run NLP Analysis
+        </button>
+
+        <!-- Analysis results will be rendered here -->
+        <div id="analysis-results"></div>
+
+        <a href="/report/{{ session.id }}" class="btn-secondary">View Report</a>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
