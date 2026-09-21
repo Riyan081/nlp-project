@@ -3,21 +3,510 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report — {{ session.topic }} — ResearchLens</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Research Report — {{ session.topic }} — ResearchLens</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Report-specific styles — self-contained for print/download */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #0a0a14;
+            color: #e0e0e0;
+            line-height: 1.7;
+        }
+
+        .report-actions {
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #1e1e30;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .report-actions a {
+            color: #818cf8;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .report-actions button {
+            padding: 0.6rem 1.5rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .report-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .report-header {
+            text-align: center;
+            padding: 2rem 0 3rem;
+            border-bottom: 1px solid #1e1e30;
+            margin-bottom: 2rem;
+        }
+
+        .report-badge {
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #a5b4fc;
+            margin-bottom: 1rem;
+        }
+
+        .report-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-header p {
+            color: #9ca3af;
+            font-size: 0.95rem;
+        }
+
+        .report-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .report-section h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #1e1e30;
+        }
+
+        .report-section h2 .section-num {
+            color: #6366f1;
+            margin-right: 0.5rem;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .overview-stat {
+            background: #13131f;
+            border: 1px solid #1e1e30;
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        .overview-stat .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #6366f1;
+        }
+
+        .overview-stat .stat-label {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-top: 0.3rem;
+        }
+
+        .paper-entry {
+            background: #13131f;
+            border: 1px solid #1e1e30;
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .paper-entry h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 0.3rem;
+        }
+
+        .paper-entry .paper-info {
+            font-size: 0.8rem;
+            color: #9ca3af;
+        }
+
+        .paper-entry .paper-info a {
+            color: #818cf8;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            margin: 0.15rem;
+        }
+
+        .tag-keyword { background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+        .tag-method { background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.2); color: #6ee7b7; }
+        .tag-entity { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); color: #fcd34d; }
+        .tag-metric { background: rgba(244, 114, 182, 0.1); border: 1px solid rgba(244, 114, 182, 0.2); color: #f9a8d4; }
+        .tag-dataset { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.5rem 0; }
+
+        .theme-card {
+            background: #13131f;
+            border: 1px solid #1e1e30;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .theme-card h3 { font-size: 0.95rem; color: #fff; margin-bottom: 0.5rem; }
+        .theme-card p { font-size: 0.85rem; color: #9ca3af; }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .comparison-table th {
+            padding: 0.6rem;
+            text-align: left;
+            background: #13131f;
+            color: #9ca3af;
+            border-bottom: 1px solid #1e1e30;
+        }
+
+        .comparison-table td {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid #111;
+            color: #ccc;
+            vertical-align: top;
+        }
+
+        .trend-text {
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-bottom: 0.5rem;
+        }
+
+        .underrep-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #111;
+            font-size: 0.9rem;
+        }
+
+        .underrep-item .theme { color: #e0e0e0; }
+        .underrep-item .freq { color: #9ca3af; font-size: 0.8rem; }
+
+        .report-footer {
+            text-align: center;
+            padding: 2rem 0;
+            border-top: 1px solid #1e1e30;
+            color: #555;
+            font-size: 0.8rem;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: #fff; color: #333; }
+            .report-actions { display: none; }
+            .report-container { padding: 1rem; }
+            .paper-entry, .theme-card, .overview-stat { border-color: #ddd; background: #f9f9f9; }
+            .report-header h1 { color: #333; }
+            .report-section h2 { color: #333; border-bottom-color: #ddd; }
+            .tag { border-color: #ccc; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <a href="/dashboard/{{ session.id }}" class="back-link">← Back to Dashboard</a>
-        <h1>Research Report: {{ session.topic }}</h1>
-        <p>Report will be fully generated in Step 7.</p>
+    <!-- Action Bar -->
+    <div class="report-actions">
+        <a href="/dashboard/{{ session.id }}">← Back to Dashboard</a>
+        <div>
+            <button onclick="window.print()">📄 Print / Save PDF</button>
+        </div>
+    </div>
 
-        <h2>Selected Papers ({{ papers|length }})</h2>
-        <ol>
+    <div class="report-container">
+        <!-- Header -->
+        <div class="report-header">
+            <div class="report-badge">🔬 ResearchLens Report</div>
+            <h1>{{ session.topic }}</h1>
+            <p>Generated on {{ session.created_at }} · {{ papers|length }} papers analyzed</p>
+        </div>
+
+        <!-- 1. Executive Overview -->
+        <div class="report-section">
+            <h2><span class="section-num">1.</span> Executive Overview</h2>
+
+            <div class="overview-grid">
+                <div class="overview-stat">
+                    <div class="stat-value">{{ papers|length }}</div>
+                    <div class="stat-label">Papers Analyzed</div>
+                </div>
+                <div class="overview-stat">
+                    {% set years = papers | map(attribute='year') | select('number') | list %}
+                    <div class="stat-value">
+                        {% if years %}{{ years|min }}–{{ years|max }}{% else %}N/A{% endif %}
+                    </div>
+                    <div class="stat-label">Year Range</div>
+                </div>
+                <div class="overview-stat">
+                    {% set all_methods = [] %}
+                    {% for a in analyses %}
+                        {% if a.methods %}
+                            {% for m in a.methods %}
+                                {% if m not in all_methods %}
+                                    {% if all_methods.append(m) %}{% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                    <div class="stat-value">{{ all_methods|length }}</div>
+                    <div class="stat-label">Methods Found</div>
+                </div>
+            </div>
+
+            <p style="color:#bbb;font-size:0.9rem;">
+                This report presents an NLP-driven analysis of {{ papers|length }} research papers related to
+                "<strong style="color:#fff;">{{ session.topic }}</strong>". Papers were automatically retrieved
+                from Semantic Scholar, analyzed using tokenization, lemmatization, POS tagging, TF-IDF,
+                Named Entity Recognition, sentence embeddings, cosine similarity, and K-Means clustering.
+            </p>
+        </div>
+
+        <!-- 2. Selected Papers -->
+        <div class="report-section">
+            <h2><span class="section-num">2.</span> Selected Papers ({{ papers|length }})</h2>
+
             {% for paper in papers %}
-            <li>{{ paper.title }} ({{ paper.year or 'N/A' }})</li>
+            <div class="paper-entry">
+                <h3>{{ loop.index }}. {{ paper.title }}</h3>
+                <div class="paper-info">
+                    📅 {{ paper.year or 'N/A' }} ·
+                    📊 {{ paper.citation_count or 0 }} citations ·
+                    ⭐ Relevance: {{ "%.1f"|format(paper.relevance_score) }}
+                    {% if paper.url %}
+                    · <a href="{{ paper.url }}" target="_blank">View Paper →</a>
+                    {% endif %}
+                </div>
+            </div>
             {% endfor %}
-        </ol>
+        </div>
+
+        <!-- 3. Main Keywords -->
+        <div class="report-section">
+            <h2><span class="section-num">3.</span> Main Keywords</h2>
+            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.5rem;">
+                Top keywords extracted using TF-IDF analysis across all papers:
+            </p>
+            <div class="tag-cloud">
+                {% set all_kw = {} %}
+                {% for a in analyses %}
+                    {% if a.keywords %}
+                        {% for kw in a.keywords[:10] %}
+                            {% if kw.term and kw.term not in all_kw %}
+                                {% if all_kw.update({kw.term: kw.score}) %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+                {% for term in all_kw %}
+                <span class="tag tag-keyword">{{ term }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 4. Research Themes / Clusters -->
+        <div class="report-section">
+            <h2><span class="section-num">4.</span> Research Themes</h2>
+            {% if topics %}
+                {% for topic in topics %}
+                <div class="theme-card">
+                    <h3>Theme {{ loop.index }}: {{ topic.topic_name }}</h3>
+                    <p>{{ topic.frequency }} paper{{ 's' if topic.frequency != 1 }} in this cluster</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color:#888;">Run NLP analysis from the dashboard to generate themes.</p>
+            {% endif %}
+        </div>
+
+        <!-- 5. Methods Used -->
+        <div class="report-section">
+            <h2><span class="section-num">5.</span> Methods Used</h2>
+            <div class="tag-cloud">
+                {% set seen_methods = [] %}
+                {% for a in analyses %}
+                    {% if a.methods %}
+                        {% for m in a.methods %}
+                            {% if m not in seen_methods %}
+                                {% if seen_methods.append(m) %}{% endif %}
+                                <span class="tag tag-method">{{ m }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% if seen_methods|length == 0 %}
+                <p style="color:#888;">No methods extracted yet. Run NLP analysis from the dashboard.</p>
+            {% endif %}
+        </div>
+
+        <!-- 6. Important Entities -->
+        <div class="report-section">
+            <h2><span class="section-num">6.</span> Important Entities</h2>
+            <div class="tag-cloud">
+                {% set seen_ent = [] %}
+                {% for a in analyses %}
+                    {% if a.entities %}
+                        {% for e in a.entities %}
+                            {% if e.text not in seen_ent and seen_ent|length < 25 %}
+                                {% if seen_ent.append(e.text) %}{% endif %}
+                                <span class="tag tag-entity" title="{{ e.label }}">{{ e.text }} ({{ e.label }})</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% if seen_ent|length == 0 %}
+                <p style="color:#888;">No entities extracted yet. Run NLP analysis from the dashboard.</p>
+            {% endif %}
+        </div>
+
+        <!-- 7. Methodology Comparison -->
+        <div class="report-section">
+            <h2><span class="section-num">7.</span> Methodology Comparison</h2>
+            {% if analyses %}
+            <div style="overflow-x:auto;">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Paper</th>
+                            <th>Year</th>
+                            <th>Methods</th>
+                            <th>Datasets</th>
+                            <th>Metrics</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for paper in papers %}
+                        {% set analysis = namespace(found=None) %}
+                        {% for a in analyses %}
+                            {% if a.paper_id == paper.id %}
+                                {% set analysis.found = a %}
+                            {% endif %}
+                        {% endfor %}
+                        <tr>
+                            <td>{{ paper.title[:50] }}{% if paper.title|length > 50 %}...{% endif %}</td>
+                            <td>{{ paper.year or 'N/A' }}</td>
+                            <td>
+                                {% if analysis.found and analysis.found.methods %}
+                                    {{ analysis.found.methods | join(', ') }}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if analysis.found and analysis.found.datasets %}
+                                    {{ analysis.found.datasets | join(', ') }}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if analysis.found and analysis.found.metrics %}
+                                    {{ analysis.found.metrics | join(', ') }}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p style="color:#888;">Run NLP analysis from the dashboard to generate comparison.</p>
+            {% endif %}
+        </div>
+
+        <!-- 8. Publication Trends -->
+        <div class="report-section">
+            <h2><span class="section-num">8.</span> Publication Trends</h2>
+            {% set year_counts = {} %}
+            {% for paper in papers %}
+                {% if paper.year %}
+                    {% if paper.year in year_counts %}
+                        {% if year_counts.update({paper.year: year_counts[paper.year] + 1}) %}{% endif %}
+                    {% else %}
+                        {% if year_counts.update({paper.year: 1}) %}{% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {% for year in year_counts | sort %}
+            <div class="trend-text">
+                📅 <strong>{{ year }}</strong>: {{ year_counts[year] }} paper{{ 's' if year_counts[year] != 1 }}
+            </div>
+            {% endfor %}
+            <p style="color:#9ca3af;font-size:0.82rem;margin-top:0.5rem;">
+                <em>Note: Trends reflect only the {{ papers|length }} selected papers, not the entire field.</em>
+            </p>
+        </div>
+
+        <!-- 9. Potentially Underrepresented Themes -->
+        <div class="report-section">
+            <h2><span class="section-num">9.</span> Potentially Underrepresented Themes</h2>
+            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.8rem;">
+                The following themes appear less frequently in the selected literature. These are identified
+                based on frequency analysis and should be verified by the researcher.
+            </p>
+            {% set underrep = [] %}
+            {% set method_counts = {} %}
+            {% for a in analyses %}
+                {% if a.methods %}
+                    {% for m in a.methods %}
+                        {% if m in method_counts %}
+                            {% if method_counts.update({m: method_counts[m] + 1}) %}{% endif %}
+                        {% else %}
+                            {% if method_counts.update({m: 1}) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+            {% for method in method_counts %}
+                {% if method_counts[method] <= (papers|length * 0.2)|int or method_counts[method] <= 1 %}
+                <div class="underrep-item">
+                    <span class="theme">{{ method }}</span>
+                    <span class="freq">{{ method_counts[method] }}/{{ papers|length }} papers</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+            {% if method_counts|length == 0 %}
+                <p style="color:#888;">Run NLP analysis from the dashboard first.</p>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="report-footer">
+            <p>Generated by <strong>ResearchLens</strong> — NLP-Based Research Discovery Platform</p>
+            <p>This report is auto-generated from NLP analysis. Researchers should verify all findings against the original papers.</p>
+        </div>
     </div>
 </body>
 </html>
