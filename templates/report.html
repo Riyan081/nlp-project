@@ -502,6 +502,116 @@
             {% endif %}
         </div>
 
+        <!-- 10. Research Gaps -->
+        <div class="report-section">
+            <h2><span class="section-num">10.</span> Research Gaps</h2>
+            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.8rem;">
+                The following research gaps were identified by analyzing method coverage, temporal trends,
+                cross-cluster patterns, and semantic similarity across papers. These gaps represent potential
+                areas for future research.
+            </p>
+
+            {% set all_methods_set = [] %}
+            {% set method_paper_count = {} %}
+            {% for a in analyses %}
+                {% if a.methods %}
+                    {% for m in a.methods %}
+                        {% if m not in all_methods_set %}
+                            {% if all_methods_set.append(m) %}{% endif %}
+                        {% endif %}
+                        {% if m in method_paper_count %}
+                            {% if method_paper_count.update({m: method_paper_count[m] + 1}) %}{% endif %}
+                        {% else %}
+                            {% if method_paper_count.update({m: 1}) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+
+            <h3 style="color:#a5b4fc;font-size:1rem;margin:1rem 0 0.5rem;">🔬 Methods with Limited Coverage</h3>
+            <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
+                Methods appearing in fewer than 15% of papers:
+            </p>
+            {% set gap_threshold = (papers|length * 0.15)|int %}
+            {% set gap_threshold = [gap_threshold, 1]|max %}
+            {% set found_gaps = [] %}
+            {% for m in method_paper_count %}
+                {% if method_paper_count[m] <= gap_threshold %}
+                    {% if found_gaps.append(m) %}{% endif %}
+                    <div class="underrep-item">
+                        <span class="theme">{{ m }}</span>
+                        <span class="freq">{{ method_paper_count[m] }}/{{ papers|length }} papers ({{ (method_paper_count[m] / papers|length * 100)|round(1) }}%)</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {% if found_gaps|length == 0 %}
+                <p style="color:#888;">All methods have adequate coverage across the corpus.</p>
+            {% endif %}
+
+            <h3 style="color:#a5b4fc;font-size:1rem;margin:1.5rem 0 0.5rem;">🔗 Unexplored Method Combinations</h3>
+            <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
+                Popular methods (in 30%+ of papers) that are never used together in the same paper:
+            </p>
+            {% set pop_threshold = (papers|length * 0.3)|int %}
+            {% set pop_threshold = [pop_threshold, 2]|max %}
+            {% set popular_list = [] %}
+            {% for m in method_paper_count %}
+                {% if method_paper_count[m] >= pop_threshold %}
+                    {% if popular_list.append(m) %}{% endif %}
+                {% endif %}
+            {% endfor %}
+
+            {% if popular_list|length >= 2 %}
+                {% set cooccur = {} %}
+                {% for a in analyses %}
+                    {% if a.methods %}
+                        {% set pop_in_paper = [] %}
+                        {% for m in a.methods %}
+                            {% if m in popular_list %}
+                                {% if pop_in_paper.append(m) %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for m1 in pop_in_paper %}
+                            {% for m2 in pop_in_paper %}
+                                {% if m1 < m2 %}
+                                    {% if cooccur.update({m1 + ' + ' + m2: 1}) %}{% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    {% endif %}
+                {% endfor %}
+
+                {% set missing_found = [] %}
+                {% for m1 in popular_list %}
+                    {% for m2 in popular_list %}
+                        {% if m1 < m2 %}
+                            {% set pair_key = m1 + ' + ' + m2 %}
+                            {% if pair_key not in cooccur %}
+                                {% if missing_found.append(pair_key) %}{% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+
+                {% if missing_found|length > 0 %}
+                    <div class="tag-cloud">
+                        {% for combo in missing_found[:10] %}
+                            <span class="tag tag-method">{{ combo }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color:#888;">All popular method combinations are already explored.</p>
+                {% endif %}
+            {% else %}
+                <p style="color:#888;">Not enough popular methods to analyze combinations.</p>
+            {% endif %}
+
+            <p style="color:#9ca3af;font-size:0.82rem;margin-top:1.5rem;font-style:italic;">
+                Note: Research gaps are computationally identified and should be validated against
+                the broader literature. They serve as starting points for future investigation.
+            </p>
+        </div>
+
         <!-- Footer -->
         <div class="report-footer">
             <p>Generated by <strong>ResearchLens</strong> — NLP-Based Research Discovery Platform</p>

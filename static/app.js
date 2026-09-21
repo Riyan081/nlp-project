@@ -86,6 +86,7 @@ function renderResults(data) {
     renderTrends(data.trends);
     renderSimilarityHeatmap(data.similarity_matrix);
     renderUnderrepresented(data.underrepresented);
+    renderResearchGaps(data.research_gaps);
 }
 
 
@@ -552,4 +553,50 @@ async function semanticSearch(sessionId) {
     } catch (err) {
         results.innerHTML = `<p class="placeholder-text">Error: ${err.message}</p>`;
     }
+}
+
+
+// --- Research Gaps ---
+function renderResearchGaps(gapsData) {
+    const container = document.getElementById('gapsContent');
+    if (!gapsData || !gapsData.gaps || gapsData.gaps.length === 0) {
+        container.innerHTML = '<p class="placeholder-text">No significant research gaps identified.</p>';
+        return;
+    }
+
+    const severityColors = { high: '#ef4444', medium: '#f59e0b', low: '#6366f1' };
+    const severityIcons = { high: '🔴', medium: '🟡', low: '🔵' };
+
+    let html = '';
+
+    // Summary header
+    html += '<div class="gap-summary" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;">';
+    html += `<p style="color:#a5b4fc;font-size:0.95rem;margin-bottom:0.3rem;">📊 ${gapsData.summary}</p>`;
+    html += `<p style="color:#6b7280;font-size:0.82rem;">${gapsData.total_methods} unique methods detected across ${gapsData.total_papers} papers</p>`;
+    html += '</div>';
+
+    // Gap cards
+    gapsData.gaps.forEach((gap, idx) => {
+        const color = severityColors[gap.severity] || '#6366f1';
+        const icon = severityIcons[gap.severity] || '🔵';
+
+        html += `<div class="gap-card" style="background:rgba(15,15,30,0.6);border:1px solid #1e1e30;border-left:3px solid ${color};border-radius:10px;padding:1.2rem;margin-bottom:1rem;">`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">`;
+        html += `<h3 style="color:#fff;font-size:1rem;font-weight:600;">${icon} ${gap.title}</h3>`;
+        html += `<span style="background:${color}22;color:${color};padding:0.2rem 0.7rem;border-radius:12px;font-size:0.75rem;font-weight:600;text-transform:uppercase;">${gap.severity}</span>`;
+        html += `</div>`;
+        html += `<p style="color:#9ca3af;font-size:0.88rem;margin-bottom:0.8rem;">${gap.description}</p>`;
+
+        if (gap.items && gap.items.length > 0) {
+            html += '<div class="keyword-cloud" style="gap:0.4rem;">';
+            gap.items.forEach(item => {
+                html += `<span class="keyword-tag" style="border-left:2px solid ${color};">${item}</span>`;
+            });
+            html += '</div>';
+        }
+
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
 }

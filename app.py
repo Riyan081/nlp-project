@@ -57,7 +57,7 @@ def analyze(session_id):
         from services.similarity import compute_embeddings, compute_similarity_matrix
         from services.analysis import (
             cluster_papers, extract_trends, find_underrepresented_themes,
-            build_methodology_comparison
+            build_methodology_comparison, identify_research_gaps
         )
 
         session = database.get_session(session_id)
@@ -87,6 +87,9 @@ def analyze(session_id):
         # Step 6: Methodology comparison
         comparison = build_methodology_comparison(papers, analyses)
 
+        # Step 7: Research gaps
+        research_gaps = identify_research_gaps(papers, analyses, clusters, similarity_matrix)
+
         database.update_session_status(session_id, 'analyzed')
 
         return jsonify({
@@ -97,6 +100,7 @@ def analyze(session_id):
             'trends': trends,
             'underrepresented': underrepresented,
             'comparison': comparison,
+            'research_gaps': research_gaps,
         })
     except Exception as e:
         import traceback
