@@ -52,66 +52,76 @@ def dashboard(session_id):
 @app.route('/api/analyze/<int:session_id>', methods=['POST'])
 def analyze(session_id):
     """Run NLP analysis on all papers in a session."""
-    from services.nlp import analyze_papers
-    from services.similarity import compute_embeddings, compute_similarity_matrix
-    from services.analysis import (
-        cluster_papers, extract_trends, find_underrepresented_themes,
-        build_methodology_comparison
-    )
+    try:
+        from services.nlp import analyze_papers
+        from services.similarity import compute_embeddings, compute_similarity_matrix
+        from services.analysis import (
+            cluster_papers, extract_trends, find_underrepresented_themes,
+            build_methodology_comparison
+        )
 
-    session = database.get_session(session_id)
-    if not session:
-        return jsonify({'error': 'Session not found'}), 404
+        session = database.get_session(session_id)
+        if not session:
+            return jsonify({'status': 'error', 'error': 'Session not found'}), 404
 
-    papers = database.get_session_papers(session_id)
-    if not papers:
-        return jsonify({'error': 'No papers found'}), 404
+        papers = database.get_session_papers(session_id)
+        if not papers:
+            return jsonify({'status': 'error', 'error': 'No papers found in session'}), 404
 
-    # Step 1: NLP analysis (keywords, entities, methods)
-    analyses = analyze_papers(session_id, papers)
+        # Step 1: NLP analysis (keywords, entities, methods)
+        analyses = analyze_papers(session_id, papers)
 
-    # Step 2: Embeddings and similarity
-    embeddings_data = compute_embeddings(session_id, papers)
-    similarity_matrix = compute_similarity_matrix(embeddings_data)
+        # Step 2: Embeddings and similarity
+        embeddings_data = compute_embeddings(session_id, papers)
+        similarity_matrix = compute_similarity_matrix(embeddings_data)
 
-    # Step 3: Clustering
-    clusters = cluster_papers(session_id, papers, embeddings_data)
+        # Step 3: Clustering
+        clusters = cluster_papers(session_id, papers, embeddings_data)
 
-    # Step 4: Trends
-    trends = extract_trends(papers, analyses)
+        # Step 4: Trends
+        trends = extract_trends(papers, analyses)
 
-    # Step 5: Underrepresented themes
-    underrepresented = find_underrepresented_themes(analyses, papers)
+        # Step 5: Underrepresented themes
+        underrepresented = find_underrepresented_themes(analyses, papers)
 
-    # Step 6: Methodology comparison
-    comparison = build_methodology_comparison(papers, analyses)
+        # Step 6: Methodology comparison
+        comparison = build_methodology_comparison(papers, analyses)
 
-    database.update_session_status(session_id, 'analyzed')
+        database.update_session_status(session_id, 'analyzed')
 
-    return jsonify({
-        'status': 'success',
-        'analyses': analyses,
-        'similarity_matrix': similarity_matrix,
-        'clusters': clusters,
-        'trends': trends,
-        'underrepresented': underrepresented,
-        'comparison': comparison,
-    })
+        return jsonify({
+            'status': 'success',
+            'analyses': analyses,
+            'similarity_matrix': similarity_matrix,
+            'clusters': clusters,
+            'trends': trends,
+            'underrepresented': underrepresented,
+            'comparison': comparison,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'status': 'error', 'error': str(e)}), 500
 
 
 @app.route('/api/semantic-search/<int:session_id>', methods=['POST'])
 def semantic_search(session_id):
     """Semantic search across papers in a session."""
-    from services.similarity import semantic_search as do_search
+    try:
+        from services.similarity import semantic_search as do_search
 
-    query = request.json.get('query', '').strip()
-    if not query:
-        return jsonify({'error': 'No query provided'}), 400
+        query = request.json.get('query', '').strip()
+        if not query:
+            return jsonify({'error': 'No query provided'}), 400
 
-    papers = database.get_session_papers(session_id)
-    results = do_search(session_id, query, papers)
+        papers = database.get_session_papers(session_id)
+        results = do_search(session_id, query, papers)
 
-    return jsonify({'results': results})
+        return jsonify({'results': results})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/report/<int:session_id>')
@@ -134,4 +144,4 @@ def report(session_id):
 
 if __name__ == '__main__':
     database.init_db()
-    app.run(debug=DEBUG, port=5000)
+    app.run(debug=DEBUG, use_reloader=False, port=5000)
