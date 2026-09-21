@@ -5,40 +5,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — {{ session.topic }} — ResearchLens</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="back-link">← Back to Search</a>
-        <h1>{{ session.topic }}</h1>
-        <p>{{ papers|length }} papers found · Status: {{ session.status }}</p>
-
-        <!-- Papers List -->
-        <div class="papers-list">
-            <h2>Papers</h2>
-            {% for paper in papers %}
-            <div class="paper-card">
-                <h3>{{ paper.title }}</h3>
-                <p class="paper-meta">
-                    {{ paper.year or 'N/A' }} · Citations: {{ paper.citation_count or 0 }}
-                    · Relevance: {{ "%.2f"|format(paper.relevance_score) }}
-                </p>
-                <p class="paper-abstract">{{ paper.abstract[:300] }}{% if paper.abstract|length > 300 %}...{% endif %}</p>
-                {% if paper.url %}
-                <a href="{{ paper.url }}" target="_blank" class="paper-link">View Paper →</a>
-                {% endif %}
+    <div class="dashboard-page">
+        <!-- Top Bar -->
+        <nav class="top-bar">
+            <a href="/" class="nav-logo">🔬 ResearchLens</a>
+            <div class="nav-actions">
+                <a href="/" class="nav-link">New Search</a>
+                <a href="/report/{{ session.id }}" class="nav-link btn-outline">View Report</a>
             </div>
-            {% endfor %}
+        </nav>
+
+        <div class="container">
+            <!-- Session Header -->
+            <div class="dash-header">
+                <h1>{{ session.topic }}</h1>
+                <div class="dash-meta">
+                    <span class="meta-badge">{{ papers|length }} Papers</span>
+                    <span class="meta-badge status-{{ session.status }}">{{ session.status }}</span>
+                </div>
+            </div>
+
+            <!-- Analyze Button -->
+            {% if session.status != 'analyzed' %}
+            <div class="analyze-section" id="analyzeSection">
+                <p>Papers are loaded. Run NLP analysis to extract keywords, entities, methods, compute similarity, cluster papers, and generate trends.</p>
+                <button id="analyzeBtn" class="btn-primary btn-large" onclick="runAnalysis({{ session.id }})">
+                    🧠 Run NLP Analysis
+                </button>
+                <div id="analysisProgress" class="progress-bar" style="display:none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <span class="progress-text" id="progressText">Starting analysis...</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="papers">📄 Papers</button>
+                <button class="tab-btn" data-tab="keywords">🔑 Keywords & Entities</button>
+                <button class="tab-btn" data-tab="clusters">🎯 Clusters</button>
+                <button class="tab-btn" data-tab="comparison">⚖️ Comparison</button>
+                <button class="tab-btn" data-tab="trends">📈 Trends</button>
+                <button class="tab-btn" data-tab="search">🔍 Semantic Search</button>
+            </div>
+
+            <!-- Tab: Papers -->
+            <div class="tab-content active" id="tab-papers">
+                <div class="papers-list">
+                    {% for paper in papers %}
+                    <div class="paper-card">
+                        <div class="paper-rank">#{{ loop.index }}</div>
+                        <div class="paper-body">
+                            <h3 class="paper-title">{{ paper.title }}</h3>
+                            <div class="paper-meta">
+                                {% if paper.authors %}
+                                    {% set authors_list = paper.authors %}
+                                    {% if authors_list is string %}
+                                        <span class="meta-item">👤 {{ authors_list }}</span>
+                                    {% endif %}
+                                {% endif %}
+                                <span class="meta-item">📅 {{ paper.year or 'N/A' }}</span>
+                                <span class="meta-item">📊 {{ paper.citation_count or 0 }} citations</span>
+                                <span class="meta-item relevance">⭐ {{ "%.1f"|format(paper.relevance_score) }}</span>
+                            </div>
+                            <p class="paper-abstract">{{ paper.abstract[:400] }}{% if paper.abstract and paper.abstract|length > 400 %}...{% endif %}</p>
+                            {% if paper.url %}
+                            <a href="{{ paper.url }}" target="_blank" class="paper-link">View Paper →</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Tab: Keywords & Entities -->
+            <div class="tab-content" id="tab-keywords">
+                <div id="keywordsContent">
+                    <p class="placeholder-text">Run NLP analysis to see keywords and entities.</p>
+                </div>
+            </div>
+
+            <!-- Tab: Clusters -->
+            <div class="tab-content" id="tab-clusters">
+                <div id="clustersContent">
+                    <p class="placeholder-text">Run NLP analysis to see paper clusters.</p>
+                </div>
+            </div>
+
+            <!-- Tab: Comparison -->
+            <div class="tab-content" id="tab-comparison">
+                <div id="comparisonContent">
+                    <p class="placeholder-text">Run NLP analysis to see methodology comparison.</p>
+                </div>
+            </div>
+
+            <!-- Tab: Trends -->
+            <div class="tab-content" id="tab-trends">
+                <div id="trendsContent">
+                    <p class="placeholder-text">Run NLP analysis to see research trends.</p>
+                </div>
+            </div>
+
+            <!-- Tab: Semantic Search -->
+            <div class="tab-content" id="tab-search">
+                <div class="semantic-search-box">
+                    <h2>Semantic Search</h2>
+                    <p>Ask a natural language question to find relevant papers.</p>
+                    <div class="search-wrapper">
+                        <input type="text" id="semanticQuery" placeholder='e.g., "Which papers use deep learning?" or "papers about weather data"'>
+                        <button onclick="semanticSearch({{ session.id }})" class="btn-primary">Search</button>
+                    </div>
+                    <div id="searchResults"></div>
+                </div>
+            </div>
+
+            <!-- Similarity Heatmap (shown after analysis) -->
+            <div id="similaritySection" style="display:none;">
+                <h2>📊 Paper Similarity Heatmap</h2>
+                <div class="heatmap-container">
+                    <canvas id="similarityCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Underrepresented Themes -->
+            <div id="underrepresentedSection" style="display:none;">
+                <h2>🔍 Potentially Underrepresented Themes</h2>
+                <p class="section-desc">These themes appear less frequently in the selected literature.</p>
+                <div id="underrepresentedContent"></div>
+            </div>
         </div>
-
-        <!-- Analysis button — will trigger NLP in later steps -->
-        <button id="analyze-btn" class="btn-primary" onclick="runAnalysis({{ session.id }})">
-            Run NLP Analysis
-        </button>
-
-        <!-- Analysis results will be rendered here -->
-        <div id="analysis-results"></div>
-
-        <a href="/report/{{ session.id }}" class="btn-secondary">View Report</a>
     </div>
 
     <script src="{{ url_for('static', filename='app.js') }}"></script>

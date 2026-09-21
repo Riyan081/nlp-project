@@ -5,30 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResearchLens — Research Discovery Platform</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>ResearchLens</h1>
-        <p class="subtitle">NLP-Based Research Discovery & Analysis Platform</p>
+    <div class="landing-page">
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="hero-glow"></div>
+            <div class="container">
+                <div class="hero-content">
+                    <div class="logo-badge">
+                        <span class="logo-icon">🔬</span>
+                        <span class="logo-text">ResearchLens</span>
+                    </div>
+                    <h1>Discover & Analyze<br>Research Papers with NLP</h1>
+                    <p class="hero-desc">Enter a research topic — we'll find 10–15 relevant papers, analyze them using NLP techniques, and generate an interactive research landscape.</p>
 
-        <!-- Search Form -->
-        <form action="/search" method="POST" class="search-form">
-            <input type="text" name="topic" placeholder="Enter a research topic (e.g., Machine Learning for Electricity Demand Forecasting)" required>
-            <button type="submit">Discover Papers</button>
-        </form>
+                    <!-- Search Form -->
+                    <form action="/search" method="POST" class="search-form" id="searchForm">
+                        <div class="search-wrapper">
+                            <input type="text" name="topic" id="topicInput"
+                                   placeholder="e.g., Machine Learning for Electricity Demand Forecasting"
+                                   required autocomplete="off">
+                            <button type="submit" id="searchBtn">
+                                <span class="btn-text">Discover Papers</span>
+                                <span class="btn-loading" style="display:none;">Searching...</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Features -->
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <span class="feature-icon">📄</span>
+                            <h3>Paper Discovery</h3>
+                            <p>Auto-fetch 10–15 relevant papers from Semantic Scholar</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🧠</span>
+                            <h3>NLP Analysis</h3>
+                            <p>TF-IDF, NER, POS tagging, keyword & method extraction</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🔗</span>
+                            <h3>Semantic Similarity</h3>
+                            <p>Sentence embeddings & cosine similarity between papers</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">📊</span>
+                            <h3>Research Landscape</h3>
+                            <p>Clustering, trends, methodology comparison & reports</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Past Sessions -->
         {% if sessions %}
-        <div class="sessions">
-            <h2>Recent Searches</h2>
-            {% for session in sessions %}
-            <a href="/dashboard/{{ session.id }}" class="session-card">
-                <span class="session-topic">{{ session.topic }}</span>
-                <span class="session-meta">{{ session.num_papers }} papers · {{ session.created_at }}</span>
-            </a>
-            {% endfor %}
+        <div class="container">
+            <div class="sessions-section">
+                <h2>Recent Searches</h2>
+                <div class="sessions-grid">
+                    {% for session in sessions %}
+                    <a href="/dashboard/{{ session.id }}" class="session-card">
+                        <div class="session-topic">{{ session.topic }}</div>
+                        <div class="session-meta">
+                            <span>{{ session.num_papers }} papers</span>
+                            <span class="session-status status-{{ session.status }}">{{ session.status }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
         {% endif %}
     </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function() {
+            const btn = document.getElementById('searchBtn');
+            btn.querySelector('.btn-text').style.display = 'none';
+            btn.querySelector('.btn-loading').style.display = 'inline';
+            btn.disabled = true;
+        });
+    </script>
 </body>
 </html>
