@@ -82,7 +82,6 @@ async function runAnalysis(sessionId) {
 function renderResults(data) {
     renderKeywords(data.analyses);
     renderClusters(data.clusters);
-    renderComparison(data.comparison);
     renderTrends(data.trends);
     renderResearchResults(data.analyses, data.research_gaps, data.trends);
 }
@@ -96,10 +95,9 @@ function renderKeywords(analyses) {
         return;
     }
 
-    // Collect all keywords, methods, entities
+    // Collect all keywords, methods
     const allKeywords = [];
     const allMethods = new Set();
-    const allEntities = [];
     const allDatasets = new Set();
     const allMetrics = new Set();
 
@@ -110,7 +108,7 @@ function renderKeywords(analyses) {
             });
         }
         if (a.methods) a.methods.forEach(m => allMethods.add(m));
-        if (a.entities) a.entities.forEach(e => allEntities.push(e));
+
         if (a.datasets) a.datasets.forEach(d => allDatasets.add(d));
         if (a.metrics) a.metrics.forEach(m => allMetrics.add(m));
     });
@@ -128,20 +126,10 @@ function renderKeywords(analyses) {
         .sort((a, b) => b.avgScore - a.avgScore)
         .slice(0, 30);
 
-    // Unique entities
-    const uniqueEntities = [];
-    const seenEnt = new Set();
-    allEntities.forEach(e => {
-        const key = e.text + '|' + e.label;
-        if (!seenEnt.has(key)) {
-            seenEnt.add(key);
-            uniqueEntities.push(e);
-        }
-    });
 
-    let html = '<div class="keywords-grid">';
+    let html = '<div class="keywords-section">';
 
-    // Left: keyword cloud + methods
+    // Keywords, methods, datasets, metrics
     html += '<div>';
     html += '<h3 style="color:#fff;margin-bottom:0.8rem;">Top Keywords (TF-IDF)</h3>';
     html += '<div class="keyword-cloud">';
@@ -169,20 +157,6 @@ function renderKeywords(analyses) {
         html += '<div class="keyword-cloud">';
         allMetrics.forEach(m => { html += `<span class="keyword-tag metric">${m}</span>`; });
         html += '</div>';
-    }
-    html += '</div>';
-
-    // Right: entities table
-    html += '<div>';
-    html += '<h3 style="color:#fff;margin-bottom:0.8rem;">Named Entities (NER)</h3>';
-    if (uniqueEntities.length > 0) {
-        html += '<table class="entity-table"><thead><tr><th>Entity</th><th>Type</th></tr></thead><tbody>';
-        uniqueEntities.slice(0, 30).forEach(e => {
-            html += `<tr><td>${e.text}</td><td><span class="keyword-tag entity">${e.label}</span></td></tr>`;
-        });
-        html += '</tbody></table>';
-    } else {
-        html += '<p class="placeholder-text">No entities found.</p>';
     }
     html += '</div>';
 
@@ -500,23 +474,7 @@ function renderResearchResults(analyses, gapsData, trends) {
 
     // --- Research Gaps from analysis ---
     if (gapsData && gapsData.gaps && gapsData.gaps.length > 0) {
-        // Declining themes
-        const decliningGaps = gapsData.gaps.filter(g => g.type === 'temporal_gap');
-        if (decliningGaps.length > 0) {
-            decliningGaps.forEach(gap => {
-                html += '<div style="background:#13131f;border:1px solid #1e1e30;border-left:3px solid #ef4444;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
-                html += '<h3 style="color:#f87171;font-size:1rem;margin-bottom:0.5rem;">📉 Declining Research Themes</h3>';
-                html += `<p style="color:#777;font-size:0.82rem;margin-bottom:0.8rem;">${gap.description}</p>`;
-                if (gap.items && gap.items.length > 0) {
-                    html += '<div class="keyword-cloud" style="gap:0.4rem;">';
-                    gap.items.forEach(item => {
-                        html += `<span class="keyword-tag" style="border-left:2px solid #ef4444;">${item}</span>`;
-                    });
-                    html += '</div>';
-                }
-                html += '</div>';
-            });
-        }
+
 
         // Missing method combinations
         const comboGaps = gapsData.gaps.filter(g => g.type === 'missing_combinations');
@@ -536,23 +494,7 @@ function renderResearchResults(analyses, gapsData, trends) {
             });
         }
 
-        // Cross-cluster isolated methods
-        const crossGaps = gapsData.gaps.filter(g => g.type === 'cross_cluster');
-        if (crossGaps.length > 0) {
-            crossGaps.forEach(gap => {
-                html += '<div style="background:#13131f;border:1px solid #1e1e30;border-left:3px solid #38bdf8;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
-                html += '<h3 style="color:#7dd3fc;font-size:1rem;margin-bottom:0.5rem;">🎯 Isolated Methods (Only in One Theme)</h3>';
-                html += `<p style="color:#777;font-size:0.82rem;margin-bottom:0.8rem;">${gap.description}</p>`;
-                if (gap.items && gap.items.length > 0) {
-                    html += '<div class="keyword-cloud" style="gap:0.4rem;">';
-                    gap.items.forEach(item => {
-                        html += `<span class="keyword-tag" style="border-left:2px solid #38bdf8;">${item}</span>`;
-                    });
-                    html += '</div>';
-                }
-                html += '</div>';
-            });
-        }
+
     }
 
     // --- Future Research Points ---
@@ -571,10 +513,7 @@ function renderResearchResults(analyses, gapsData, trends) {
             html += `<li>Try combining methods that haven't been used together, such as <strong style="color:#fff;">${combos.items[0]}</strong>.</li>`;
         }
 
-        const declining = gapsData.gaps.find(g => g.type === 'temporal_gap');
-        if (declining && declining.items && declining.items.length > 0) {
-            html += `<li>Revisit declining research themes like <strong style="color:#fff;">${declining.items.slice(0, 2).join(', ')}</strong> which have not been explored recently.</li>`;
-        }
+
 
         const isolated = gapsData.gaps.find(g => g.type === 'isolated_papers');
         if (isolated && isolated.items && isolated.items.length > 0) {
