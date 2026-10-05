@@ -84,9 +84,7 @@ function renderResults(data) {
     renderClusters(data.clusters);
     renderComparison(data.comparison);
     renderTrends(data.trends);
-    renderSimilarityHeatmap(data.similarity_matrix);
-    renderUnderrepresented(data.underrepresented);
-    renderResearchGaps(data.research_gaps);
+    renderResearchResults(data.analyses, data.research_gaps, data.trends);
 }
 
 
@@ -268,21 +266,11 @@ function renderTrends(trends) {
 
     let html = '<div class="charts-grid">';
 
-    // Papers per year
+    // Papers per year (simple bar chart)
     html += '<div class="chart-card"><h3>Papers per Year</h3><canvas id="papersYearChart"></canvas></div>';
 
-    // Methods distribution
+    // Methods distribution (simple donut chart)
     html += '<div class="chart-card"><h3>Methods Distribution</h3><canvas id="methodsChart"></canvas></div>';
-
-    // Method trends over time
-    if (trends.method_trends && Object.keys(trends.method_trends).length > 0) {
-        html += '<div class="chart-card full-width"><h3>Method Trends Over Time</h3><canvas id="methodTrendsChart"></canvas></div>';
-    }
-
-    // Keyword trends
-    if (trends.keyword_trends && Object.keys(trends.keyword_trends).length > 0) {
-        html += '<div class="chart-card full-width"><h3>Keyword Trends Over Time</h3><canvas id="keywordTrendsChart"></canvas></div>';
-    }
 
     html += '</div>';
     container.innerHTML = html;
@@ -291,12 +279,6 @@ function renderTrends(trends) {
     setTimeout(() => {
         renderPapersPerYearChart(trends.papers_per_year);
         renderMethodsChart(trends.method_trends);
-        if (trends.method_trends && Object.keys(trends.method_trends).length > 0) {
-            renderMethodTrendsChart(trends.method_trends);
-        }
-        if (trends.keyword_trends && Object.keys(trends.keyword_trends).length > 0) {
-            renderKeywordTrendsChart(trends.keyword_trends);
-        }
     }, 100);
 }
 
@@ -365,158 +347,6 @@ function renderMethodsChart(methodTrends) {
 }
 
 
-function renderMethodTrendsChart(methodTrends) {
-    const ctx = document.getElementById('methodTrendsChart');
-    if (!ctx) return;
-
-    const allYears = new Set();
-    Object.values(methodTrends).forEach(yd => Object.keys(yd).forEach(y => allYears.add(parseInt(y))));
-    const years = Array.from(allYears).sort();
-
-    const colors = [
-        '#6366f1', '#34d399', '#fbbf24', '#f472b6', '#38bdf8',
-        '#a78bfa', '#fb923c', '#4ade80', '#f87171', '#22d3ee'
-    ];
-
-    const datasets = Object.keys(methodTrends).map((method, i) => ({
-        label: method,
-        data: years.map(y => methodTrends[method][y] || 0),
-        borderColor: colors[i % colors.length],
-        backgroundColor: colors[i % colors.length] + '22',
-        fill: false,
-        tension: 0.3,
-        pointRadius: 4,
-    }));
-
-    new Chart(ctx, {
-        type: 'line',
-        data: { labels: years, datasets },
-        options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: '#ccc', font: { size: 11 } } } },
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#888' }, grid: { color: '#1e1e30' } },
-                x: { ticks: { color: '#888' }, grid: { display: false } }
-            }
-        }
-    });
-}
-
-
-function renderKeywordTrendsChart(keywordTrends) {
-    const ctx = document.getElementById('keywordTrendsChart');
-    if (!ctx) return;
-
-    const allYears = new Set();
-    Object.values(keywordTrends).forEach(yd => Object.keys(yd).forEach(y => allYears.add(parseInt(y))));
-    const years = Array.from(allYears).sort();
-
-    const colors = [
-        '#818cf8', '#6ee7b7', '#fcd34d', '#f9a8d4', '#7dd3fc',
-        '#c4b5fd', '#fdba74', '#86efac', '#fca5a5', '#67e8f9'
-    ];
-
-    // Only show top 5 keywords
-    const topKeywords = Object.entries(keywordTrends)
-        .map(([term, yd]) => ({ term, total: Object.values(yd).reduce((a, b) => a + b, 0) }))
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 5)
-        .map(k => k.term);
-
-    const datasets = topKeywords.map((kw, i) => ({
-        label: kw,
-        data: years.map(y => keywordTrends[kw][y] || 0),
-        borderColor: colors[i % colors.length],
-        fill: false,
-        tension: 0.3,
-        pointRadius: 4,
-    }));
-
-    new Chart(ctx, {
-        type: 'line',
-        data: { labels: years, datasets },
-        options: {
-            responsive: true,
-            plugins: { legend: { labels: { color: '#ccc', font: { size: 11 } } } },
-            scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#888' }, grid: { color: '#1e1e30' } },
-                x: { ticks: { color: '#888' }, grid: { display: false } }
-            }
-        }
-    });
-}
-
-
-// --- Similarity Heatmap ---
-function renderSimilarityHeatmap(simData) {
-    if (!simData || !simData.matrix || simData.matrix.length < 2) return;
-
-    const section = document.getElementById('similaritySection');
-    section.style.display = 'block';
-
-    const canvas = document.getElementById('similarityCanvas');
-    const ctx = canvas.getContext('2d');
-    const n = simData.matrix.length;
-    const cellSize = Math.min(50, Math.floor(600 / n));
-    const padding = 10;
-
-    canvas.width = n * cellSize + padding * 2;
-    canvas.height = n * cellSize + padding * 2;
-
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            const val = simData.matrix[i][j];
-            const intensity = Math.floor(val * 255);
-            ctx.fillStyle = `rgb(${Math.floor(99 * val)}, ${Math.floor(102 * val)}, ${Math.floor(241 * val)})`;
-            ctx.fillRect(padding + j * cellSize, padding + i * cellSize, cellSize - 1, cellSize - 1);
-
-            // Show value
-            if (cellSize > 25) {
-                ctx.fillStyle = val > 0.5 ? '#fff' : '#888';
-                ctx.font = '10px Inter';
-                ctx.textAlign = 'center';
-                ctx.fillText(val.toFixed(2), padding + j * cellSize + cellSize / 2, padding + i * cellSize + cellSize / 2 + 3);
-            }
-        }
-    }
-
-    // Paper labels
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '9px Inter';
-    ctx.textAlign = 'right';
-    for (let i = 0; i < n; i++) {
-        ctx.fillText(`P${i + 1}`, padding - 2, padding + i * cellSize + cellSize / 2 + 3);
-    }
-    ctx.textAlign = 'center';
-    for (let j = 0; j < n; j++) {
-        ctx.fillText(`P${j + 1}`, padding + j * cellSize + cellSize / 2, padding + n * cellSize + 12);
-    }
-}
-
-
-// --- Underrepresented Themes ---
-function renderUnderrepresented(themes) {
-    if (!themes || themes.length === 0) return;
-
-    const section = document.getElementById('underrepresentedSection');
-    section.style.display = 'block';
-
-    const container = document.getElementById('underrepresentedContent');
-    let html = '';
-
-    themes.slice(0, 15).forEach(t => {
-        const pct = t.percentage;
-        html += `<div class="theme-bar">`;
-        html += `<span class="theme-name">${t.theme}</span>`;
-        html += `<div class="theme-bar-track"><div class="theme-bar-fill" style="width:${Math.max(pct, 3)}%;"></div></div>`;
-        html += `<span class="theme-bar-label">${t.frequency}/${t.total_papers} papers (${pct}%)</span>`;
-        html += `</div>`;
-    });
-
-    container.innerHTML = html;
-}
-
-
 // --- Semantic Search ---
 async function semanticSearch(sessionId) {
     const input = document.getElementById('semanticQuery');
@@ -556,47 +386,211 @@ async function semanticSearch(sessionId) {
 }
 
 
-// --- Research Gaps ---
-function renderResearchGaps(gapsData) {
+// --- Results: Most Common Research Areas + Future Work ---
+function renderResearchResults(analyses, gapsData, trends) {
     const container = document.getElementById('gapsContent');
-    if (!gapsData || !gapsData.gaps || gapsData.gaps.length === 0) {
-        container.innerHTML = '<p class="placeholder-text">No significant research gaps identified.</p>';
+    if (!analyses || analyses.length === 0) {
+        container.innerHTML = '<p class="placeholder-text">No analysis data available.</p>';
         return;
     }
 
-    const severityColors = { high: '#ef4444', medium: '#f59e0b', low: '#6366f1' };
-    const severityIcons = { high: '🔴', medium: '🟡', low: '🔵' };
-
     let html = '';
 
-    // Summary header
-    html += '<div class="gap-summary" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;">';
-    html += `<p style="color:#a5b4fc;font-size:0.95rem;margin-bottom:0.3rem;">📊 ${gapsData.summary}</p>`;
-    html += `<p style="color:#6b7280;font-size:0.82rem;">${gapsData.total_methods} unique methods detected across ${gapsData.total_papers} papers</p>`;
-    html += '</div>';
+    // ========== SECTION 1: Most Common Research Areas ==========
+    html += '<div class="results-section" style="margin-bottom:2.5rem;">';
+    html += '<h2 style="color:#fff;font-size:1.3rem;font-weight:600;margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid #1e1e30;"><span style="color:#6366f1;">1.</span> Most Common Research Areas</h2>';
+    html += '<p style="color:#9ca3af;font-size:0.88rem;margin-bottom:1.2rem;">Based on analysis of all papers, the following are the most frequently researched topics, methods, and themes in this field.</p>';
 
-    // Gap cards
-    gapsData.gaps.forEach((gap, idx) => {
-        const color = severityColors[gap.severity] || '#6366f1';
-        const icon = severityIcons[gap.severity] || '🔵';
-
-        html += `<div class="gap-card" style="background:rgba(15,15,30,0.6);border:1px solid #1e1e30;border-left:3px solid ${color};border-radius:10px;padding:1.2rem;margin-bottom:1rem;">`;
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">`;
-        html += `<h3 style="color:#fff;font-size:1rem;font-weight:600;">${icon} ${gap.title}</h3>`;
-        html += `<span style="background:${color}22;color:${color};padding:0.2rem 0.7rem;border-radius:12px;font-size:0.75rem;font-weight:600;text-transform:uppercase;">${gap.severity}</span>`;
-        html += `</div>`;
-        html += `<p style="color:#9ca3af;font-size:0.88rem;margin-bottom:0.8rem;">${gap.description}</p>`;
-
-        if (gap.items && gap.items.length > 0) {
-            html += '<div class="keyword-cloud" style="gap:0.4rem;">';
-            gap.items.forEach(item => {
-                html += `<span class="keyword-tag" style="border-left:2px solid ${color};">${item}</span>`;
+    // --- Top Methods (most popular) ---
+    const methodCounts = {};
+    analyses.forEach(a => {
+        if (a.methods && Array.isArray(a.methods)) {
+            a.methods.forEach(m => {
+                methodCounts[m] = (methodCounts[m] || 0) + 1;
             });
-            html += '</div>';
         }
+    });
+
+    const totalPapers = analyses.length;
+    const sortedMethods = Object.entries(methodCounts)
+        .sort((a, b) => b[1] - a[1]);
+
+    if (sortedMethods.length > 0) {
+        html += '<div style="background:#13131f;border:1px solid #1e1e30;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
+        html += '<h3 style="color:#6ee7b7;font-size:1rem;margin-bottom:0.8rem;">🔬 Most Used Methods & Techniques</h3>';
+        html += '<p style="color:#777;font-size:0.82rem;margin-bottom:1rem;">Methods ranked by how many papers use them:</p>';
+
+        sortedMethods.forEach(([method, count]) => {
+            const pct = Math.round(count / totalPapers * 100);
+            const barColor = pct >= 50 ? '#34d399' : pct >= 25 ? '#6366f1' : '#9ca3af';
+            html += `<div style="display:flex;align-items:center;gap:1rem;margin-bottom:0.6rem;">`;
+            html += `<span style="min-width:200px;font-size:0.88rem;color:#e0e0e0;text-align:right;">${method}</span>`;
+            html += `<div style="flex:1;height:22px;background:#1e1e30;border-radius:4px;overflow:hidden;">`;
+            html += `<div style="height:100%;width:${Math.max(pct, 5)}%;background:${barColor};border-radius:4px;transition:width 0.5s;"></div>`;
+            html += `</div>`;
+            html += `<span style="font-size:0.78rem;color:#9ca3af;min-width:90px;">${count}/${totalPapers} papers (${pct}%)</span>`;
+            html += `</div>`;
+        });
 
         html += '</div>';
+    }
+
+    // --- Top Keywords (most researched topics) ---
+    const keywordCounts = {};
+    analyses.forEach(a => {
+        if (a.keywords && Array.isArray(a.keywords)) {
+            a.keywords.slice(0, 5).forEach(kw => {
+                const term = (typeof kw === 'object') ? kw.term : String(kw);
+                if (term && term.length > 2) {
+                    keywordCounts[term] = (keywordCounts[term] || 0) + 1;
+                }
+            });
+        }
     });
+
+    const sortedKeywords = Object.entries(keywordCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15);
+
+    if (sortedKeywords.length > 0) {
+        html += '<div style="background:#13131f;border:1px solid #1e1e30;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
+        html += '<h3 style="color:#a5b4fc;font-size:1rem;margin-bottom:0.8rem;">📌 Most Researched Topics</h3>';
+        html += '<p style="color:#777;font-size:0.82rem;margin-bottom:1rem;">The keywords and topics that appear most frequently across papers:</p>';
+        html += '<div class="keyword-cloud" style="gap:0.5rem;">';
+        sortedKeywords.forEach(([term, count]) => {
+            const size = count >= 5 ? '1rem' : count >= 3 ? '0.9rem' : '0.82rem';
+            const opacity = Math.min(1, 0.5 + (count / totalPapers));
+            html += `<span class="keyword-tag" style="font-size:${size};opacity:${opacity};">${term} <small style="opacity:0.6;">(${count})</small></span>`;
+        });
+        html += '</div>';
+        html += '</div>';
+    }
+
+    // --- Summary sentence ---
+    const topMethod = sortedMethods.length > 0 ? sortedMethods[0][0] : 'N/A';
+    const topTopic = sortedKeywords.length > 0 ? sortedKeywords[0][0] : 'N/A';
+    html += `<div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:10px;padding:1rem 1.2rem;">`;
+    html += `<p style="color:#6ee7b7;font-size:0.9rem;">📋 <strong>Summary:</strong> Most research in this field focuses on <strong style="color:#fff;">${topTopic}</strong> using <strong style="color:#fff;">${topMethod}</strong> as the primary method. ${sortedMethods.length} unique methods were found across ${totalPapers} papers.</p>`;
+    html += `</div>`;
+
+    html += '</div>';
+
+    // ========== SECTION 2: Future Work & Research Gaps ==========
+    html += '<div class="results-section">';
+    html += '<h2 style="color:#fff;font-size:1.3rem;font-weight:600;margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid #1e1e30;"><span style="color:#6366f1;">2.</span> Future Work & Research Directions</h2>';
+    html += '<p style="color:#9ca3af;font-size:0.88rem;margin-bottom:1.2rem;">Based on analyzing all papers, the following areas have less research and represent potential directions for future work.</p>';
+
+    // --- Methods with Less Research ---
+    const lessResearchedMethods = sortedMethods.filter(([m, c]) => c <= Math.max(1, Math.floor(totalPapers * 0.2)));
+
+    if (lessResearchedMethods.length > 0) {
+        html += '<div style="background:#13131f;border:1px solid #1e1e30;border-left:3px solid #f59e0b;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
+        html += '<h3 style="color:#fcd34d;font-size:1rem;margin-bottom:0.5rem;">⚠️ Methods with Limited Research</h3>';
+        html += `<p style="color:#777;font-size:0.82rem;margin-bottom:1rem;">These methods are mentioned but used in very few papers (≤${Math.max(1, Math.floor(totalPapers * 0.2))} out of ${totalPapers}). More research could be done using these approaches:</p>`;
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">';
+        lessResearchedMethods.forEach(([method, count]) => {
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.8rem;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);border-radius:8px;">`;
+            html += `<span style="color:#e0e0e0;font-size:0.88rem;">${method}</span>`;
+            html += `<span style="color:#9ca3af;font-size:0.75rem;">${count}/${totalPapers}</span>`;
+            html += `</div>`;
+        });
+        html += '</div>';
+        html += '</div>';
+    }
+
+    // --- Research Gaps from analysis ---
+    if (gapsData && gapsData.gaps && gapsData.gaps.length > 0) {
+        // Declining themes
+        const decliningGaps = gapsData.gaps.filter(g => g.type === 'temporal_gap');
+        if (decliningGaps.length > 0) {
+            decliningGaps.forEach(gap => {
+                html += '<div style="background:#13131f;border:1px solid #1e1e30;border-left:3px solid #ef4444;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
+                html += '<h3 style="color:#f87171;font-size:1rem;margin-bottom:0.5rem;">📉 Declining Research Themes</h3>';
+                html += `<p style="color:#777;font-size:0.82rem;margin-bottom:0.8rem;">${gap.description}</p>`;
+                if (gap.items && gap.items.length > 0) {
+                    html += '<div class="keyword-cloud" style="gap:0.4rem;">';
+                    gap.items.forEach(item => {
+                        html += `<span class="keyword-tag" style="border-left:2px solid #ef4444;">${item}</span>`;
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+        }
+
+        // Missing method combinations
+        const comboGaps = gapsData.gaps.filter(g => g.type === 'missing_combinations');
+        if (comboGaps.length > 0) {
+            comboGaps.forEach(gap => {
+                html += '<div style="background:#13131f;border:1px solid #1e1e30;border-left:3px solid #6366f1;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
+                html += '<h3 style="color:#a5b4fc;font-size:1rem;margin-bottom:0.5rem;">🔗 Unexplored Method Combinations</h3>';
+                html += `<p style="color:#777;font-size:0.82rem;margin-bottom:0.8rem;">These popular methods have never been combined together in a single paper. Combining them could lead to new results:</p>`;
+                if (gap.items && gap.items.length > 0) {
+                    html += '<div class="keyword-cloud" style="gap:0.4rem;">';
+                    gap.items.forEach(item => {
+                        html += `<span class="keyword-tag method">${item}</span>`;
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+        }
+
+        // Cross-cluster isolated methods
+        const crossGaps = gapsData.gaps.filter(g => g.type === 'cross_cluster');
+        if (crossGaps.length > 0) {
+            crossGaps.forEach(gap => {
+                html += '<div style="background:#13131f;border:1px solid #1e1e30;border-left:3px solid #38bdf8;border-radius:10px;padding:1.5rem;margin-bottom:1rem;">';
+                html += '<h3 style="color:#7dd3fc;font-size:1rem;margin-bottom:0.5rem;">🎯 Isolated Methods (Only in One Theme)</h3>';
+                html += `<p style="color:#777;font-size:0.82rem;margin-bottom:0.8rem;">${gap.description}</p>`;
+                if (gap.items && gap.items.length > 0) {
+                    html += '<div class="keyword-cloud" style="gap:0.4rem;">';
+                    gap.items.forEach(item => {
+                        html += `<span class="keyword-tag" style="border-left:2px solid #38bdf8;">${item}</span>`;
+                    });
+                    html += '</div>';
+                }
+                html += '</div>';
+            });
+        }
+    }
+
+    // --- Future Research Points ---
+    html += '<div style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:1.2rem;margin-top:0.5rem;">';
+    html += '<h3 style="color:#a5b4fc;font-size:1rem;margin-bottom:0.8rem;">💡 Suggested Future Research Points</h3>';
+    html += '<ul style="color:#bbb;font-size:0.88rem;padding-left:1.2rem;line-height:1.8;">';
+
+    if (lessResearchedMethods.length > 0) {
+        const topUnexplored = lessResearchedMethods.slice(0, 3).map(([m]) => m).join(', ');
+        html += `<li>Explore underutilized methods like <strong style="color:#fff;">${topUnexplored}</strong> which have limited coverage in current research.</li>`;
+    }
+
+    if (gapsData && gapsData.gaps) {
+        const combos = gapsData.gaps.find(g => g.type === 'missing_combinations');
+        if (combos && combos.items && combos.items.length > 0) {
+            html += `<li>Try combining methods that haven't been used together, such as <strong style="color:#fff;">${combos.items[0]}</strong>.</li>`;
+        }
+
+        const declining = gapsData.gaps.find(g => g.type === 'temporal_gap');
+        if (declining && declining.items && declining.items.length > 0) {
+            html += `<li>Revisit declining research themes like <strong style="color:#fff;">${declining.items.slice(0, 2).join(', ')}</strong> which have not been explored recently.</li>`;
+        }
+
+        const isolated = gapsData.gaps.find(g => g.type === 'isolated_papers');
+        if (isolated && isolated.items && isolated.items.length > 0) {
+            html += `<li>Some papers explore unique directions that could benefit from further investigation and cross-referencing.</li>`;
+        }
+    }
+
+    html += `<li>Consider applying the most popular methods to datasets or domains where they haven't been tested yet.</li>`;
+    html += `<li>Compare performance of different methods on the same benchmark tasks to identify the best approaches.</li>`;
+    html += '</ul>';
+    html += '</div>';
+
+    html += '</div>';
+
+    // --- Disclaimer ---
+    html += `<p style="color:#555;font-size:0.78rem;margin-top:1.5rem;font-style:italic;text-align:center;">Note: These results are automatically generated from NLP analysis of ${totalPapers} papers. Verify findings against the original papers.</p>`;
 
     container.innerHTML = html;
 }

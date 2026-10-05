@@ -50,7 +50,7 @@
                 <button class="tab-btn" data-tab="clusters">🎯 Clusters</button>
                 <button class="tab-btn" data-tab="comparison">⚖️ Comparison</button>
                 <button class="tab-btn" data-tab="trends">📈 Trends</button>
-                <button class="tab-btn" data-tab="gaps">🔬 Research Gaps</button>
+                <button class="tab-btn" data-tab="gaps">📊 Results</button>
                 <button class="tab-btn" data-tab="search">🔍 Semantic Search</button>
             </div>
 
@@ -73,7 +73,7 @@
                                 <span class="meta-item">📊 {{ paper.citation_count or 0 }} citations</span>
                                 <span class="meta-item relevance">⭐ {{ "%.1f"|format(paper.relevance_score) }}</span>
                             </div>
-                            <p class="paper-abstract">{{ paper.abstract[:400] }}{% if paper.abstract and paper.abstract|length > 400 %}...{% endif %}</p>
+                            <p class="paper-abstract">{{ (paper.abstract or '')[:400] }}{% if paper.abstract and paper.abstract|length > 400 %}...{% endif %}</p>
                             {% if paper.url %}
                             <a href="{{ paper.url }}" target="_blank" class="paper-link">View Paper →</a>
                             {% endif %}
@@ -111,10 +111,10 @@
                 </div>
             </div>
 
-            <!-- Tab: Research Gaps -->
+            <!-- Tab: Results -->
             <div class="tab-content" id="tab-gaps">
                 <div id="gapsContent">
-                    <p class="placeholder-text">Run NLP analysis to identify research gaps.</p>
+                    <p class="placeholder-text">Run NLP analysis to see results — most common research areas and future work directions.</p>
                 </div>
             </div>
 
@@ -129,21 +129,6 @@
                     </div>
                     <div id="searchResults"></div>
                 </div>
-            </div>
-
-            <!-- Similarity Heatmap (shown after analysis) -->
-            <div id="similaritySection" style="display:none;">
-                <h2>📊 Paper Similarity Heatmap</h2>
-                <div class="heatmap-container">
-                    <canvas id="similarityCanvas"></canvas>
-                </div>
-            </div>
-
-            <!-- Underrepresented Themes -->
-            <div id="underrepresentedSection" style="display:none;">
-                <h2>🔍 Potentially Underrepresented Themes</h2>
-                <p class="section-desc">These themes appear less frequently in the selected literature.</p>
-                <div id="underrepresentedContent"></div>
             </div>
         </div>
     </div>

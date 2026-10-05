@@ -315,32 +315,9 @@
             {% endfor %}
         </div>
 
-        <!-- 3. Main Keywords -->
+        <!-- 3. Research Themes / Clusters -->
         <div class="report-section">
-            <h2><span class="section-num">3.</span> Main Keywords</h2>
-            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.5rem;">
-                Top keywords extracted using TF-IDF analysis across all papers:
-            </p>
-            <div class="tag-cloud">
-                {% set all_kw = {} %}
-                {% for a in analyses %}
-                    {% if a.keywords %}
-                        {% for kw in a.keywords[:10] %}
-                            {% if kw.term and kw.term not in all_kw %}
-                                {% if all_kw.update({kw.term: kw.score}) %}{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
-                {% for term in all_kw %}
-                <span class="tag tag-keyword">{{ term }}</span>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- 4. Research Themes / Clusters -->
-        <div class="report-section">
-            <h2><span class="section-num">4.</span> Research Themes</h2>
+            <h2><span class="section-num">3.</span> Research Themes</h2>
             {% if topics %}
                 {% for topic in topics %}
                 <div class="theme-card">
@@ -353,130 +330,14 @@
             {% endif %}
         </div>
 
-        <!-- 5. Methods Used -->
+        <!-- 4. Most Common Research Areas -->
         <div class="report-section">
-            <h2><span class="section-num">5.</span> Methods Used</h2>
-            <div class="tag-cloud">
-                {% set seen_methods = [] %}
-                {% for a in analyses %}
-                    {% if a.methods %}
-                        {% for m in a.methods %}
-                            {% if m not in seen_methods %}
-                                {% if seen_methods.append(m) %}{% endif %}
-                                <span class="tag tag-method">{{ m }}</span>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
-            </div>
-            {% if seen_methods|length == 0 %}
-                <p style="color:#888;">No methods extracted yet. Run NLP analysis from the dashboard.</p>
-            {% endif %}
-        </div>
-
-        <!-- 6. Important Entities -->
-        <div class="report-section">
-            <h2><span class="section-num">6.</span> Important Entities</h2>
-            <div class="tag-cloud">
-                {% set seen_ent = [] %}
-                {% for a in analyses %}
-                    {% if a.entities %}
-                        {% for e in a.entities %}
-                            {% if e.text not in seen_ent and seen_ent|length < 25 %}
-                                {% if seen_ent.append(e.text) %}{% endif %}
-                                <span class="tag tag-entity" title="{{ e.label }}">{{ e.text }} ({{ e.label }})</span>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
-            </div>
-            {% if seen_ent|length == 0 %}
-                <p style="color:#888;">No entities extracted yet. Run NLP analysis from the dashboard.</p>
-            {% endif %}
-        </div>
-
-        <!-- 7. Methodology Comparison -->
-        <div class="report-section">
-            <h2><span class="section-num">7.</span> Methodology Comparison</h2>
-            {% if analyses %}
-            <div style="overflow-x:auto;">
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Paper</th>
-                            <th>Year</th>
-                            <th>Methods</th>
-                            <th>Datasets</th>
-                            <th>Metrics</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for paper in papers %}
-                        {% set analysis = namespace(found=None) %}
-                        {% for a in analyses %}
-                            {% if a.paper_id == paper.id %}
-                                {% set analysis.found = a %}
-                            {% endif %}
-                        {% endfor %}
-                        <tr>
-                            <td>{{ paper.title[:50] }}{% if paper.title|length > 50 %}...{% endif %}</td>
-                            <td>{{ paper.year or 'N/A' }}</td>
-                            <td>
-                                {% if analysis.found and analysis.found.methods %}
-                                    {{ analysis.found.methods | join(', ') }}
-                                {% else %}—{% endif %}
-                            </td>
-                            <td>
-                                {% if analysis.found and analysis.found.datasets %}
-                                    {{ analysis.found.datasets | join(', ') }}
-                                {% else %}—{% endif %}
-                            </td>
-                            <td>
-                                {% if analysis.found and analysis.found.metrics %}
-                                    {{ analysis.found.metrics | join(', ') }}
-                                {% else %}—{% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <p style="color:#888;">Run NLP analysis from the dashboard to generate comparison.</p>
-            {% endif %}
-        </div>
-
-        <!-- 8. Publication Trends -->
-        <div class="report-section">
-            <h2><span class="section-num">8.</span> Publication Trends</h2>
-            {% set year_counts = {} %}
-            {% for paper in papers %}
-                {% if paper.year %}
-                    {% if paper.year in year_counts %}
-                        {% if year_counts.update({paper.year: year_counts[paper.year] + 1}) %}{% endif %}
-                    {% else %}
-                        {% if year_counts.update({paper.year: 1}) %}{% endif %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-            {% for year in year_counts | sort %}
-            <div class="trend-text">
-                📅 <strong>{{ year }}</strong>: {{ year_counts[year] }} paper{{ 's' if year_counts[year] != 1 }}
-            </div>
-            {% endfor %}
-            <p style="color:#9ca3af;font-size:0.82rem;margin-top:0.5rem;">
-                <em>Note: Trends reflect only the {{ papers|length }} selected papers, not the entire field.</em>
+            <h2><span class="section-num">4.</span> Most Common Research Areas</h2>
+            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:1rem;">
+                Based on NLP analysis of all {{ papers|length }} papers, the following are the most frequently
+                researched topics and methods in this field.
             </p>
-        </div>
 
-        <!-- 9. Potentially Underrepresented Themes -->
-        <div class="report-section">
-            <h2><span class="section-num">9.</span> Potentially Underrepresented Themes</h2>
-            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.8rem;">
-                The following themes appear less frequently in the selected literature. These are identified
-                based on frequency analysis and should be verified by the researcher.
-            </p>
-            {% set underrep = [] %}
             {% set method_counts = {} %}
             {% for a in analyses %}
                 {% if a.methods %}
@@ -489,126 +350,145 @@
                     {% endfor %}
                 {% endif %}
             {% endfor %}
-            {% for method in method_counts %}
-                {% if method_counts[method] <= (papers|length * 0.2)|int or method_counts[method] <= 1 %}
-                <div class="underrep-item">
-                    <span class="theme">{{ method }}</span>
-                    <span class="freq">{{ method_counts[method] }}/{{ papers|length }} papers</span>
-                </div>
-                {% endif %}
+
+            <!-- Most Used Methods -->
+            <h3 style="color:#6ee7b7;font-size:1rem;margin:1rem 0 0.5rem;">🔬 Most Used Methods & Techniques</h3>
+            <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
+                Methods ranked by how many papers use them:
+            </p>
+            {% for method in method_counts|dictsort(by='value', reverse=true) %}
+            <div class="underrep-item">
+                <span class="theme">{{ method[0] }}</span>
+                <span class="freq">{{ method[1] }}/{{ papers|length }} papers ({{ (method[1] / papers|length * 100)|round(0)|int }}%)</span>
+            </div>
             {% endfor %}
             {% if method_counts|length == 0 %}
-                <p style="color:#888;">Run NLP analysis from the dashboard first.</p>
-            {% endif %}
-        </div>
-
-        <!-- 10. Research Gaps -->
-        <div class="report-section">
-            <h2><span class="section-num">10.</span> Research Gaps</h2>
-            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:0.8rem;">
-                The following research gaps were identified by analyzing method coverage, temporal trends,
-                cross-cluster patterns, and semantic similarity across papers. These gaps represent potential
-                areas for future research.
-            </p>
-
-            {% set all_methods_set = [] %}
-            {% set method_paper_count = {} %}
-            {% for a in analyses %}
-                {% if a.methods %}
-                    {% for m in a.methods %}
-                        {% if m not in all_methods_set %}
-                            {% if all_methods_set.append(m) %}{% endif %}
-                        {% endif %}
-                        {% if m in method_paper_count %}
-                            {% if method_paper_count.update({m: method_paper_count[m] + 1}) %}{% endif %}
-                        {% else %}
-                            {% if method_paper_count.update({m: 1}) %}{% endif %}
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-
-            <h3 style="color:#a5b4fc;font-size:1rem;margin:1rem 0 0.5rem;">🔬 Methods with Limited Coverage</h3>
-            <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
-                Methods appearing in fewer than 15% of papers:
-            </p>
-            {% set gap_threshold = (papers|length * 0.15)|int %}
-            {% set gap_threshold = [gap_threshold, 1]|max %}
-            {% set found_gaps = [] %}
-            {% for m in method_paper_count %}
-                {% if method_paper_count[m] <= gap_threshold %}
-                    {% if found_gaps.append(m) %}{% endif %}
-                    <div class="underrep-item">
-                        <span class="theme">{{ m }}</span>
-                        <span class="freq">{{ method_paper_count[m] }}/{{ papers|length }} papers ({{ (method_paper_count[m] / papers|length * 100)|round(1) }}%)</span>
-                    </div>
-                {% endif %}
-            {% endfor %}
-            {% if found_gaps|length == 0 %}
-                <p style="color:#888;">All methods have adequate coverage across the corpus.</p>
+                <p style="color:#888;">No methods extracted yet. Run NLP analysis from the dashboard.</p>
             {% endif %}
 
-            <h3 style="color:#a5b4fc;font-size:1rem;margin:1.5rem 0 0.5rem;">🔗 Unexplored Method Combinations</h3>
+            <!-- Most Researched Topics (Keywords) -->
+            <h3 style="color:#a5b4fc;font-size:1rem;margin:1.5rem 0 0.5rem;">📌 Most Researched Topics</h3>
             <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
-                Popular methods (in 30%+ of papers) that are never used together in the same paper:
+                Top keywords extracted using TF-IDF analysis across all papers:
             </p>
-            {% set pop_threshold = (papers|length * 0.3)|int %}
-            {% set pop_threshold = [pop_threshold, 2]|max %}
-            {% set popular_list = [] %}
-            {% for m in method_paper_count %}
-                {% if method_paper_count[m] >= pop_threshold %}
-                    {% if popular_list.append(m) %}{% endif %}
-                {% endif %}
-            {% endfor %}
-
-            {% if popular_list|length >= 2 %}
-                {% set cooccur = {} %}
+            <div class="tag-cloud">
+                {% set all_kw = {} %}
                 {% for a in analyses %}
-                    {% if a.methods %}
-                        {% set pop_in_paper = [] %}
-                        {% for m in a.methods %}
-                            {% if m in popular_list %}
-                                {% if pop_in_paper.append(m) %}{% endif %}
+                    {% if a.keywords %}
+                        {% for kw in a.keywords[:5] %}
+                            {% if kw.term and kw.term not in all_kw %}
+                                {% if all_kw.update({kw.term: kw.score}) %}{% endif %}
                             {% endif %}
-                        {% endfor %}
-                        {% for m1 in pop_in_paper %}
-                            {% for m2 in pop_in_paper %}
-                                {% if m1 < m2 %}
-                                    {% if cooccur.update({m1 + ' + ' + m2: 1}) %}{% endif %}
-                                {% endif %}
-                            {% endfor %}
                         {% endfor %}
                     {% endif %}
                 {% endfor %}
-
-                {% set missing_found = [] %}
-                {% for m1 in popular_list %}
-                    {% for m2 in popular_list %}
-                        {% if m1 < m2 %}
-                            {% set pair_key = m1 + ' + ' + m2 %}
-                            {% if pair_key not in cooccur %}
-                                {% if missing_found.append(pair_key) %}{% endif %}
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
+                {% for term in all_kw %}
+                <span class="tag tag-keyword">{{ term }}</span>
                 {% endfor %}
+            </div>
 
-                {% if missing_found|length > 0 %}
-                    <div class="tag-cloud">
-                        {% for combo in missing_found[:10] %}
-                            <span class="tag tag-method">{{ combo }}</span>
+            <!-- Important Entities -->
+            <h3 style="color:#fcd34d;font-size:1rem;margin:1.5rem 0 0.5rem;">📎 Important Entities</h3>
+            <div class="tag-cloud">
+                {% set seen_ent = [] %}
+                {% for a in analyses %}
+                    {% if a.entities %}
+                        {% for e in a.entities %}
+                            {% if e.text not in seen_ent and seen_ent|length < 15 %}
+                                {% if seen_ent.append(e.text) %}{% endif %}
+                                <span class="tag tag-entity" title="{{ e.label }}">{{ e.text }} ({{ e.label }})</span>
+                            {% endif %}
                         {% endfor %}
-                    </div>
-                {% else %}
-                    <p style="color:#888;">All popular method combinations are already explored.</p>
-                {% endif %}
-            {% else %}
-                <p style="color:#888;">Not enough popular methods to analyze combinations.</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% if seen_ent|length == 0 %}
+                <p style="color:#888;">No entities extracted yet.</p>
             {% endif %}
 
+            <!-- Summary -->
+            {% if method_counts|length > 0 %}
+            {% set top_method = method_counts|dictsort(by='value', reverse=true)|first %}
+            <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:10px;padding:1rem 1.2rem;margin-top:1rem;">
+                <p style="color:#6ee7b7;font-size:0.9rem;">
+                    📋 <strong>Summary:</strong> Most research in this field uses
+                    <strong style="color:#fff;">{{ top_method[0] }}</strong> as the primary method
+                    (found in {{ top_method[1] }} out of {{ papers|length }} papers).
+                    {{ method_counts|length }} unique methods were identified across all analyzed papers.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 5. Future Work & Research Directions -->
+        <div class="report-section">
+            <h2><span class="section-num">5.</span> Future Work & Research Directions</h2>
+            <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:1rem;">
+                Based on analyzing all papers, the following areas have less research and represent
+                potential directions for future work.
+            </p>
+
+            <!-- Methods with Limited Research -->
+            <h3 style="color:#fcd34d;font-size:1rem;margin:1rem 0 0.5rem;">⚠️ Methods with Limited Research</h3>
+            <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
+                These methods are used in very few papers, suggesting they need more exploration:
+            </p>
+            {% set less_researched_found = [] %}
+            {% set threshold_val = (papers|length * 0.2)|int %}
+            {% set threshold_val = [threshold_val, 1]|max %}
+            {% for method in method_counts|dictsort(by='value') %}
+                {% if method[1] <= threshold_val %}
+                    {% if less_researched_found.append(method[0]) %}{% endif %}
+                    <div class="underrep-item">
+                        <span class="theme">{{ method[0] }}</span>
+                        <span class="freq">{{ method[1] }}/{{ papers|length }} papers</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            {% if less_researched_found|length == 0 %}
+                <p style="color:#888;">All methods have adequate coverage.</p>
+            {% endif %}
+
+            <!-- Publication Gaps -->
+            {% set year_counts = {} %}
+            {% for paper in papers %}
+                {% if paper.year %}
+                    {% if paper.year in year_counts %}
+                        {% if year_counts.update({paper.year: year_counts[paper.year] + 1}) %}{% endif %}
+                    {% else %}
+                        {% if year_counts.update({paper.year: 1}) %}{% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {% if year_counts|length > 0 %}
+            <h3 style="color:#7dd3fc;font-size:1rem;margin:1.5rem 0 0.5rem;">📅 Publication Timeline</h3>
+            <p style="color:#9ca3af;font-size:0.82rem;margin-bottom:0.5rem;">
+                Research activity over the years (years with fewer papers indicate less research):
+            </p>
+            {% for year in year_counts | sort %}
+            <div class="trend-text">
+                📅 <strong>{{ year }}</strong>: {{ year_counts[year] }} paper{{ 's' if year_counts[year] != 1 }}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Suggested Future Research Points -->
+            <h3 style="color:#a5b4fc;font-size:1rem;margin:1.5rem 0 0.5rem;">💡 Suggested Future Research Points</h3>
+            <div style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:1.2rem;">
+                <ul style="color:#bbb;font-size:0.88rem;padding-left:1.2rem;line-height:2;">
+                    {% if less_researched_found|length > 0 %}
+                    <li>Explore underutilized methods like <strong style="color:#fff;">{{ less_researched_found[:3]|join(', ') }}</strong> which have limited coverage in current research.</li>
+                    {% endif %}
+                    <li>Consider applying the most popular methods to datasets or domains where they haven't been tested yet.</li>
+                    <li>Compare performance of different methods on the same benchmark tasks to identify the best approaches.</li>
+                    <li>Cross-reference methods from different research themes to discover novel hybrid approaches.</li>
+                    <li>Investigate the applicability of less common methods to see if they offer improvements over mainstream techniques.</li>
+                </ul>
+            </div>
+
             <p style="color:#9ca3af;font-size:0.82rem;margin-top:1.5rem;font-style:italic;">
-                Note: Research gaps are computationally identified and should be validated against
-                the broader literature. They serve as starting points for future investigation.
+                Note: These directions are computationally identified from analyzing {{ papers|length }} papers
+                and should be validated against the broader literature.
             </p>
         </div>
 
