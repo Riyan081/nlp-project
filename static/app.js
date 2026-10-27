@@ -1,6 +1,6 @@
 // ===== ResearchLens — Frontend JavaScript =====
 
-// --- Tab Navigation ---
+// --- Tab Navigation + Auto-load stored results ---
 document.addEventListener('DOMContentLoaded', function() {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -15,7 +15,42 @@ document.addEventListener('DOMContentLoaded', function() {
             if (target) target.classList.add('active');
         });
     });
+
+    // Auto-load stored results if session is already analyzed
+    if (window.SESSION_DATA && window.SESSION_DATA.status === 'analyzed') {
+        loadStoredResults(window.SESSION_DATA.id);
+    }
 });
+
+
+// --- Load stored analysis results ---
+async function loadStoredResults(sessionId) {
+    // Show loading state in tabs
+    const containers = ['keywordsContent', 'clustersContent', 'trendsContent', 'gapsContent'];
+    containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<p class="placeholder-text">Loading stored results...</p>';
+    });
+
+    try {
+        const response = await fetch(`/api/results/${sessionId}`);
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            renderResults(data);
+        } else {
+            containers.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = `<p class="placeholder-text">Could not load results: ${data.error || 'Unknown error'}</p>`;
+            });
+        }
+    } catch (err) {
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = `<p class="placeholder-text">Error loading results: ${err.message}</p>`;
+        });
+    }
+}
 
 
 // --- Run NLP Analysis ---

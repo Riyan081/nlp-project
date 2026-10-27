@@ -108,6 +108,61 @@ def analyze(session_id):
         return jsonify({'status': 'error', 'error': str(e)}), 500
 
 
+@app.route('/api/results/<int:session_id>', methods=['GET'])
+def get_results(session_id):
+    """Load stored analysis results for a session that was already analyzed."""
+    try:
+        from services.similarity import compute_similarity_matrix
+        from services.analysis import (
+            cluster_papers, extract_trends, find_underrepresented_themes,
+            build_methodology_comparison, identify_research_gaps
+        )
+        import numpy as np
+
+        session = database.get_session(session_id)
+        if not session:
+            return jsonify({'status': 'error', 'error': 'Session not found'}), 404
+
+        papers = database.get_session_papers(session_id)
+        if not papers:
+            return jsonify({'status': 'error', 'error': 'No papers found'}), 404
+
+        # Load stored analyses from DB
+        analyses = database.get_all_paper_analyses(session_id)
+        if not analyses:
+            return jsonify({'status': 'error', 'error': 'No analysis data found. Run analysis first.'}), 404
+
+        # Load stored embeddings from DB and reconstruct numpy arrays
+        stored_embeddings = database.get_paper_embeddings(session_id)
+        embeddings_data = []
+        for paper_id, embedding_bytes in stored_embeddings:
+            vector = np.frombuffer(embedding_bytes, dtype=np.float32)
+            embeddings_data.append((paper_id, vector))
+
+        # Recompute derived results from stored data
+        similarity_matrix = compute_similarity_matrix(embeddings_data)
+        clusters = cluster_papers(session_id, papers, embeddings_data)
+        trends = extract_trends(papers, analyses)
+        underrepresented = find_underrepresented_themes(analyses, papers)
+        comparison = build_methodology_comparison(papers, analyses)
+        research_gaps = identify_research_gaps(papers, analyses, clusters, similarity_matrix)
+
+        return jsonify({
+            'status': 'success',
+            'analyses': analyses,
+            'similarity_matrix': similarity_matrix,
+            'clusters': clusters,
+            'trends': trends,
+            'underrepresented': underrepresented,
+            'comparison': comparison,
+            'research_gaps': research_gaps,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'status': 'error', 'error': str(e)}), 500
+
+
 @app.route('/api/semantic-search/<int:session_id>', methods=['POST'])
 def semantic_search(session_id):
     """Semantic search across papers in a session."""

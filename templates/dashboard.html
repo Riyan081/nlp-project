@@ -128,6 +128,12 @@
         </div>
     </div>
 
+    <script>
+        window.SESSION_DATA = {
+            id: {{ session.id }},
+            status: "{{ session.status }}"
+        };
+    </script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
